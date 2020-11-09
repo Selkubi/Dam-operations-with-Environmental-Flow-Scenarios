@@ -10,5 +10,9 @@ Method_monthly_var_flows <- 1
 respur <- 1
 vrmax	<- 20 #(10^6m3)
 vrmin <- 1.5 #(10^6m3)	
-damhei	<- 100 #(m)
-power <- 	0.1 #(MW)
+damhei <- 100 #(m)
+power <- 0.1 #(MW)
+
+#Spesifications
+# write the spec options here
+#maybe can do the optional eflow type etc with a function in the future
