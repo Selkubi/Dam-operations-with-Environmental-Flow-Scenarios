@@ -58,7 +58,7 @@ ny <- nrow(MAF_tt) #number of years in the dataset
 MMF <- MMF_tt %>% group_by(month) %>%
   summarise(month_average=mean(mean_monthly_flow))
   
-MAF <- mean(MMF[["month_average"]]) #Mean annual flow
+MAF <- mean(MMF[["month_average"]]) # Mean annual flow
   
   
   
