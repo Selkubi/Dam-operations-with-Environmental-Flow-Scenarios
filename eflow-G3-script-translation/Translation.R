@@ -49,6 +49,13 @@ qtt <- qtt%>%
 
 MMF_tt <- qtt %>% group_by(year, month) %>%
   summarise(mean_monthly_flow=mean(Monthly_flow))
+
+MAF_tt <- qtt %>% group_by(year) %>%
+  summarise(mean_yearly_flow=mean(Monthly_flow))
+  
+ny <- nrow(MAF_tt)
+  
+  
   
   
   
