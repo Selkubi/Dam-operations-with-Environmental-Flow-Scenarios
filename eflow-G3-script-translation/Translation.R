@@ -53,7 +53,7 @@ MMF_tt <- qtt %>% group_by(year, month) %>%
 MAF_tt <- qtt %>% group_by(year) %>%
   summarise(mean_yearly_flow=mean(Monthly_flow))
   
-ny <- nrow(MAF_tt)
+ny <- nrow(MAF_tt) #number of years in the dataset
   
   
   
