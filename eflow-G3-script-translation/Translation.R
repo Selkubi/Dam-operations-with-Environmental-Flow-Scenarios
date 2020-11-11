@@ -1,3 +1,6 @@
+setwd("C:/Local work folder/Leipzig workshop/from guido")
+
+
 library(readr)
 library(dplyr)
 library(lubridate)
@@ -6,32 +9,30 @@ library(lubridate)
 q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", col_names = c("Date", "Monthly_flow"), col_types = "cd")
 nq <- length(qtt[["Monthly_flow"]]) #length of the flow record
 nq
-i_efty <- 2
-i_mvef <- 1
-icons <- 1
-rvmax	<- 20 * 10^6 #(10^6m3)
-vrmin <- 1.5* 10^6 #(10^6m3)	
-damhei <- 100 #(m)
-power <- 0.1 * 10^6 #(MW)
 
-#Spesifications
-# write the spec options here
-#maybe can do the optional eflow type etc with a function in the future
-
-#Specifications:
+i_efty <- 2 #Choose between 1-3 for the type of eflow method
 #  Eflow_Type (variable name: i_efty)
 #1: constant whole year
 #2: variable on monthly basis
 #3: proportional to input
 
-#  Method_monthly_var_flows (variable name: i_mvef)
+i_mvef <- 1 #Choose between 1-5 scenarios
 #1: VMF, 2014)
 #2: Tessman, 1980
 #3: Smakhtin et al., 2004
 #4: Tennant, 1976
-#5: Q90-QQ50, 2014
+#5: Q90-QQ50, 201
 
- # Parameters for reservoir volume restype: 
+icons <- 1 
+# Choose '1' for consumptive use and '0' for non-consumptive use 
+
+vrmax	<- 20 * 10^6 #(10^6m3) #to keep it line with Guido's notations
+vrmin <- 1.5* 10^6 #(10^6m3)	
+damhei <- 100 #(m)
+power <- 0.1 * 10^6 #(MW)
+
+
+# Parameters for reservoir volume restype: 
 # 1: mainly consumptive water use
 # 0: mainly non-consumptive water use
 # vrmax: max storage volume
@@ -52,25 +53,94 @@ MMF_tt <- q_tt %>% group_by(year, month) %>%
 
 MAF_tt <- q_tt %>% group_by(year) %>%
   summarise(mean_yearly_flow=mean(Monthly_flow))
-  
+
 ny <- nrow(MAF_tt)                               #number of years in the dataset
-  
+
 
 MMF <- MMF_tt %>% group_by(month) %>%           # Mean annual flow vector for the whole record
   summarise(month_average=mean(mean_monthly_flow))
-  
+
 MAF <- mean(MMF[["month_average"]])             # Mean annual flow
-  
-q50 <- q_tt %>% summarise(median = median(Monthly_flow))
+
+#50, 90 and 97 % quantile calculation (there might be an error here but we kept it as Guido's)
+q50 <- q_tt %>% summarise(fifty_percentile = quantile(Monthly_flow, 0.50))
 q90 <- q_tt %>% summarise(ninetth_percentile = quantile(Monthly_flow, 0.10))
 q97 <- q_tt %>% summarise(ninetyseventh_percentile = quantile(Monthly_flow, 0.03))
 
-  
-  
-  
-  
-  
+qefm <- rep(NA,12)
+LIHflo <- rep(NA,12)
 
+if (i_efty==1){ #case 1
+  # --------------- constant eflow throughout the whole year
+  qefm <- rep(q90, 12)
+} else if (i_efty==2){ #case 2
+  #---------------- variable eflow on a monthly basis-----
+  if (i_mvef==1){ # --------------- VMF (2014
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= 0.4*MAF) {
+        qefm[i] <- 0.6*MAF
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
+        qefm[i] <- 0.45*MMF[i, 2]
+        LIHflo[i] <- 2 #i denotes an intermediate flow month
+      } else {
+        qefm[i] <- 0.3*MAF
+        LIHflo[i] <- 3 #i denotes a high flow month
+      }
+    } 
+  } else if (i_mvef==2){ # --------------- Tessmann (1980)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= 0.4*MAF) {
+        qefm[i] <- MMF[i, 2]
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else if(MMF[i, 2] > 0.4*MAF && 0.4*MMF[i, 2] <= 0.4*MAF) {
+        qefm[i] <- 0.4*MAF
+        LIHflo[i] <- 2 #i denotes an intermediate flow month
+      } else {
+        qefm[i] <- 0.4*MAF
+        LIHflo[i] <- 3 #i denotes a high flow month
+      }
+    } 
+  } else if (i_mvef==3) { #--------------- Smakhtin et al. (2004b)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= MAF) {
+        qefm[i] <- q90
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else {
+        qefm[i] <- 0.2*MAF # check this rule
+        LIHflo[i] <- 3 #i denotes a high flow month
+      }
+    } 
+  } else if (i_mvef==4) { #--------------- Tennant (1976)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= MAF) {
+        qefm[i] <- 0.2*MAF
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else {
+        qefm[i] <- 0.4*MAF
+        LIHflo[i] <- 3 #i denotes a high flow month
+      }
+    } 
+  } else if (i_mvef==5) { #--------------- Q90-Q50 (2014)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= MAF) {
+        qefm[i] <- q90
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else {
+        qefm[i] <- q50
+        LIHflo[i] <- 3 #i denotes a high flow month
+      }
+    }
+  }
+} else {#case 3
+  #---------------- eflow proportional to the incoming flow -----------
+  for (i in 1:nrow(MMF)) {
+    if (MMF[i,2] < MAF) {
+      qefm[i] <- q90
+    } else {
+      qefm[i] <- q50
+    }
+  }
+}
 
-
-
+qefm
