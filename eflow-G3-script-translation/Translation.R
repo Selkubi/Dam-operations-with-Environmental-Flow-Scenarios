@@ -7,7 +7,7 @@ library(lubridate)
 
 #### Read input flow record ####
 q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", col_names = c("Date", "Monthly_flow"), col_types = "cd")
-nq <- length(qtt[["Monthly_flow"]]) #length of the flow record
+nq <- length(q_tt[["Monthly_flow"]]) #length of the flow record
 nq
 
 i_efty <- 2 #Choose between 1-3 for the type of eflow method
@@ -56,7 +56,6 @@ MAF_tt <- q_tt %>% group_by(year) %>%
 
 ny <- nrow(MAF_tt)                               #number of years in the dataset
 
-
 MMF <- MMF_tt %>% group_by(month) %>%           # Mean annual flow vector for the whole record
   summarise(month_average=mean(mean_monthly_flow))
 
@@ -67,80 +66,100 @@ q50 <- q_tt %>% summarise(fifty_percentile = quantile(Monthly_flow, 0.50))
 q90 <- q_tt %>% summarise(ninetth_percentile = quantile(Monthly_flow, 0.10))
 q97 <- q_tt %>% summarise(ninetyseventh_percentile = quantile(Monthly_flow, 0.03))
 
-qefm <- rep(NA,12)
-LIHflo <- rep(NA,12)
+#### Eflow scenarios ####
+qefm <-vector("numeric", 1)
+LIHflo <- vector("numeric", 1)
 
-if (i_efty==1){ #case 1
-  # --------------- constant eflow throughout the whole year
+if (i_efty==1){ #case 1:constant eflow throughout the whole year
+  
   qefm <- rep(q90, 12)
-} else if (i_efty==2){ #case 2
-  #---------------- variable eflow on a monthly basis-----
-  if (i_mvef==1){ # --------------- VMF (2014
-    for (i in 1:nrow(MMF)) {
-      if (MMF[i, 2] <= 0.4*MAF) {
-        qefm[i] <- 0.6*MAF
-        LIHflo[i] <- 1 #i denotes a low flow month
-      } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
-        qefm[i] <- 0.45*MMF[i, 2]
-        LIHflo[i] <- 2 #i denotes an intermediate flow month
-      } else {
-        qefm[i] <- 0.3*MAF
-        LIHflo[i] <- 3 #i denotes a high flow month
+ 
+   } else if (i_efty==2){ #case 2: variable eflow on a monthly basis
+  
+      if (i_mvef==1){         # --------------- VMF (2014)
+        for (i in 1:nrow(MMF)) {
+          if (MMF[i, 2] <= 0.4*MAF) {
+            qefm[i] <- (0.6*MAF)
+            LIHflo[i] <- 1    #i denotes a low flow month
+            } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
+              qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the begining, but for now this works ok. 
+              LIHflo[i] <- 2    #i denotes an intermediate flow month
+              } else {
+                qefm[i] <-(0.3*MAF)
+                LIHflo[i] <- 3 #i denotes a high flow month
+              }
+          }
+        } 
+     else if (i_mvef==2){ # --------------- Tessmann (1980)
+       for (i in 1:nrow(MMF)) {
+        if (MMF[i, 2] <= 0.4*MAF) {
+         qefm[i] <- as.numeric(MMF[i, 2]) #sk:see note above
+         LIHflo[i] <- 1 #i denotes a low flow month
+         } else if(MMF[i, 2] > 0.4*MAF && 0.4*MMF[i, 2] <= 0.4*MAF) {
+           qefm[i] <- 0.4*MAF
+           LIHflo[i] <- 2 #i denotes an intermediate flow month
+           } else {
+             qefm[i] <- 0.4*MAF
+             LIHflo[i] <- 3 #i denotes a high flow month
       }
     } 
-  } else if (i_mvef==2){ # --------------- Tessmann (1980)
-    for (i in 1:nrow(MMF)) {
-      if (MMF[i, 2] <= 0.4*MAF) {
-        qefm[i] <- MMF[i, 2]
-        LIHflo[i] <- 1 #i denotes a low flow month
-      } else if(MMF[i, 2] > 0.4*MAF && 0.4*MMF[i, 2] <= 0.4*MAF) {
-        qefm[i] <- 0.4*MAF
-        LIHflo[i] <- 2 #i denotes an intermediate flow month
-      } else {
-        qefm[i] <- 0.4*MAF
-        LIHflo[i] <- 3 #i denotes a high flow month
+  } 
+     else if (i_mvef==3) { #--------------- Smakhtin et al. (2004b)
+       for (i in 1:nrow(MMF)) {
+         if (MMF[i, 2] <= MAF) {
+         qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, I just indicated the data to extract, need to test later on
+         LIHflo[i] <- 1 #i denotes a low flow month
+         } else {
+           qefm[i] <- 0.2*MAF # check this rule
+           LIHflo[i] <- 3 #i denotes a high flow month
       }
     } 
-  } else if (i_mvef==3) { #--------------- Smakhtin et al. (2004b)
-    for (i in 1:nrow(MMF)) {
-      if (MMF[i, 2] <= MAF) {
-        qefm[i] <- q90
-        LIHflo[i] <- 1 #i denotes a low flow month
-      } else {
-        qefm[i] <- 0.2*MAF # check this rule
-        LIHflo[i] <- 3 #i denotes a high flow month
-      }
-    } 
-  } else if (i_mvef==4) { #--------------- Tennant (1976)
-    for (i in 1:nrow(MMF)) {
-      if (MMF[i, 2] <= MAF) {
+  } 
+     else if (i_mvef==4) { #--------------- Tennant (1976)
+      for (i in 1:nrow(MMF)) {
+       if (MMF[i, 2] <= MAF) {
         qefm[i] <- 0.2*MAF
         LIHflo[i] <- 1 #i denotes a low flow month
-      } else {
-        qefm[i] <- 0.4*MAF
-        LIHflo[i] <- 3 #i denotes a high flow month
+        } else {
+         qefm[i] <- 0.4*MAF
+         LIHflo[i] <- 3 #i denotes a high flow month
       }
     } 
-  } else if (i_mvef==5) { #--------------- Q90-Q50 (2014)
-    for (i in 1:nrow(MMF)) {
-      if (MMF[i, 2] <= MAF) {
-        qefm[i] <- q90
+  } 
+     else if (i_mvef==5) { #--------------- Q90-Q50 (2014)
+      for (i in 1:nrow(MMF)) {
+       if (MMF[i, 2] <= MAF) {
+        qefm[i] <-q90[[1]]
         LIHflo[i] <- 1 #i denotes a low flow month
-      } else {
-        qefm[i] <- q50
-        LIHflo[i] <- 3 #i denotes a high flow month
+        } else {
+         qefm[i] <- q50[[1]]
+         LIHflo[i] <- 3 #i denotes a high flow month
       }
     }
   }
-} else {#case 3
+} else { #case 3
   #---------------- eflow proportional to the incoming flow -----------
-  for (i in 1:nrow(MMF)) {
+   for (i in 1:nrow(MMF)) {
     if (MMF[i,2] < MAF) {
-      qefm[i] <- q90
-    } else {
-      qefm[i] <- q50
+      qefm[i] <- q90[[1]]
+      } else {
+       qefm[i] <- q50[[1]]
     }
   }
 }
 
 qefm
+
+#Conversion of monthly data to daily data
+ndays <- c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+qefy <-vector("numeric", 365)
+nsum <- 0
+for (i in seq_along(ndays)){
+  qefy[(nsum+1):(nsum+(ndays[i]))] <- rep(qefm[[i]], ndays[i])
+  nsum <- ndays[i]+nsum
+}
+
+qef <- rep(qefy, ny) #GZ: Check for leap years
+#SK: leap years is doable with lubridate package
+#This gives a vector of 730 which makes sense, Guido's give 731, did he manually added the leap year? maybe with q90 at the end?
+qef <- c(qef[1:32], qef[32], qef[33:730])
