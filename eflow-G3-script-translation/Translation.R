@@ -26,8 +26,8 @@ i_mvef <- 1 #Choose between 1-5 scenarios
 icons <- 1 
 # Choose '1' for consumptive use and '0' for non-consumptive use 
 
-vrmax	<- 20 * 10^6 #(10^6m3) #to keep it line with Guido's notations
-vrmin <- 1.5* 10^6 #(10^6m3)	
+rvmax	<- 20 * 10^6 #(10^6m3) #to keep it line with Guido's notations
+rvmin <- 1.5* 10^6 #(10^6m3)	
 damhei <- 100 #(m)
 power <- 0.1 * 10^6 #(MW)
 
@@ -163,3 +163,59 @@ qef <- rep(qefy, ny) #GZ: Check for leap years
 #SK: leap years is doable with lubridate package
 #This gives a vector of 730 which makes sense, Guido's give 731, did he manually added the leap year? maybe with q90 at the end?
 qef <- c(qef[1:32], qef[32], qef[33:730])
+
+#### Reservoir operation module ####
+
+qhp <- power/damhei/9810           # average discharge (m3/s) for power production
+qcons <- rep(q90[[1,1]], nq)         # consumptive water use time series (m3/s) assumed as MAF
+qncons <- rep (qhp,nq)          # NON-consumptive water use time series (m3/s) based on input dam power
+qspill <- rep(0,nq)
+qdown <- rep(0,nq)
+qout <- rep(0, nq)
+qnet <- rep(0, nq)
+unmdem <- 0
+unmdays <- 0
+rvol <- rep(0, nq)       # initialization
+rvol[1] <- rvmax/2        # initial reservoir volume 
+dt <- 86400
+for (i in 1:(nq-1)){
+  qdown[i] <- qspill[i]+icons*qef[i]+(1-icons)*max(qef[i], qncons[i])
+  qout[i] <- qdown[i]+icons*qcons[i]
+  qnet[i] <- q_tt[["Monthly_flow"]][[i]]-qout[i]
+  rvol[i+1] <- rvol[i]+qnet[i]*dt
+  if (rvol[i]>rvmax){
+    qspill[i+1] <- rvol[i]-rvmax
+    rvol[i] <- rvmax
+  } else if (rvol[i]<rvmin){
+    unmdem <- unmdem+qcons[i]+qncons[i] # total unmet demand (consumpt + non consumpt)
+    unmdays <- unmdays+1 # n. of days in which demand is unmet 
+    qncons[i] <- 0
+    qcons[i] <- 0
+    rvol[i] <- rvmin
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
