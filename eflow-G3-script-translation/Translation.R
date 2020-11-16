@@ -212,9 +212,19 @@ time_series <- ggplot()+ geom_line(aes(x=(1:nq), y=qef), color="green")+
 time_series
 
 # Reservoir volume
-reseroir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
-  geom_line()+theme_bw()+ggtitle("Reservoir Volume (t)")
+reservoir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
+  geom_line(color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
+reservoir_volume
 
+# Outflow to the next dam
+outflow_next_dam <- ggplot(q_tt,aes(x=(1:nq), qdown)) +
+  geom_line(color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
+outflow_next_dam
+
+# Outflow to the next dam
+excess_flow <- ggplot(q_tt,aes(x=(1:nq), qspill)) +
+  geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
+outflow_next_dam
 
 
 
