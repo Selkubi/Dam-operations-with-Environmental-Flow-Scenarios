@@ -16,10 +16,6 @@ library(shiny)
 
 First you need to download the whole folder containing the code (.R), the project (.Rproj) and the adiitonal information sheets. Once you have your local repository, you can first ofen the .Rproj file and then slect the Translation.R script from the *Files* tab. 
 
-```{r}
-
-```
-
 ### Read input flow record ####
 The data is saved in q_tt and number of days the discharge is recorded is 731
 ```{r}
@@ -68,6 +64,7 @@ damhei <- 100 #(m)
 power <- 0.1 * 10^6 #(MW)
 ```
 
+
 ### Pre-processing of inflows and downstream water uses ####
 Here we organize the variables so that it's easier to use in the future. Now we have the day month and year as separate variables
 ```{r}
@@ -111,14 +108,28 @@ q97 <- q_tt %>% summarise(ninetyseventh_percentile = quantile(Monthly_flow, 0.03
 ``` {r}
 qefm <-vector("numeric", 1)
 LIHflo <- vector("numeric", 1)
+```
 
-if (i_efty==1){ #case 1:constant eflow throughout the whole year
+```{r eruptions, echo=FALSE}
+inputPanel(
+  selectInput("i_efty", label = "i_efty",
+              choices = c(1,2,3), selected = 2),
+  selectInput("i_mvef", label = "i_mvef",
+              choices = c(1,2,3, 4, 5), selected = 1),
+  selectInput("icons", label = "icons",
+              choices = c(0,1), selected = 1),
+)
+```
+
+``` {r}
+
+if (input$i_efty==1){ #case 1:constant eflow throughout the whole year
   
   qefm <- rep(q90, 12)
  
-   } else if (i_efty==2){ #case 2: variable eflow on a monthly basis
+   } else if (input$i_efty==2){ #case 2: variable eflow on a monthly basis
   
-      if (i_mvef==1){                       # ----------------- VMF (2014)
+      if (input$i_mvef==1){                       # ----------------- VMF (2014)
         for (i in 1:nrow(MMF)) {
           if (MMF[i, 2] <= 0.4*MAF) {
             qefm[i] <- (0.6*MAF)
@@ -132,7 +143,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
               }
           }
         } 
-     else if (i_mvef==2){                   # --------------- Tessmann (1980)
+     else if (input$i_mvef==2){                   # --------------- Tessmann (1980)
        for (i in 1:nrow(MMF)) {
         if (MMF[i, 2] <= 0.4*MAF) {
          qefm[i] <- as.numeric(MMF[i, 2]) #sk:see note above
@@ -146,7 +157,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
       }
     } 
   } 
-     else if (i_mvef==3) {                  #--------------- Smakhtin et al. (2004b)
+     else if (input$i_mvef==3) {                  #--------------- Smakhtin et al. (2004b)
        for (i in 1:nrow(MMF)) {
          if (MMF[i, 2] <= MAF) {
          qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, I just indicated the data to extract, need to test later on
@@ -157,7 +168,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
       }
     } 
   } 
-     else if (i_mvef==4) {                 #--------------- Tennant (1976)
+     else if (input$i_mvef==4) {                 #--------------- Tennant (1976)
       for (i in 1:nrow(MMF)) {
        if (MMF[i, 2] <= MAF) {
         qefm[i] <- 0.2*MAF
@@ -168,7 +179,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
       }
     } 
   } 
-     else if (i_mvef==5) {                 #--------------- Q90-Q50 (2014)
+     else if (input$i_mvef==5) {                 #--------------- Q90-Q50 (2014)
       for (i in 1:nrow(MMF)) {
        if (MMF[i, 2] <= MAF) {
         qefm[i] <-q90[[1]]
@@ -232,8 +243,8 @@ dt <- 86400                          # seconds in a day
 The dam operation 
 ```` {r}
 for (i in 1:(nq-1)){
-  qdown[i] <- qspill[i]+icons*qef[i]+(1-icons)*max(qef[i], qncons[i])
-  qout[i] <- qdown[i]+icons*qcons[i]
+  qdown[i] <- qspill[i]+input$icons*qef[i]+(1-input$icons)*max(qef[i], qncons[i])
+  qout[i] <- qdown[i]+input$icons*qcons[i]
   qnet[i] <- q_tt[["Monthly_flow"]][[i]]-qout[i]
   rvol[i+1] <- rvol[i]+qnet[i]*dt
   if (rvol[i]>rvmax){
@@ -285,6 +296,5 @@ excess_flow <- ggplot(q_tt,aes(x=(1:nq), qspill)) +
   geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
 outflow_next_dam
 ```
-
 
 
