@@ -250,11 +250,42 @@ for (i in 1:(nq-1)){
 ```
 
 ### Plotting ####
-```{R}
+```{r}
 flow <- ggplot(q_tt,aes(Date, Monthly_flow)) +
   geom_line()+theme_bw()+ggtitle("Daily Discharge")
 ggplotly(flow)
 ```
+
+# Calculated eflow plot
+```{r}
+time_series <- ggplot()+ geom_line(aes(x=(1:nq), y=qef), color="green")+
+  geom_line(aes(x=(1:nq), y=qncons), color="blue")+
+  geom_line(aes(x=(1:nq), y=qcons), color="red")+
+  theme_bw()+ ggtitle(bquote('Eflow ' ~Q[ef]~'(t)')) + xlab("time (days)") + ylab( bquote("Eflow ("~m^3~'/s)'))
+time_series
+```
+
+```{r}
+# Reservoir volume
+reservoir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
+  geom_line(color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
+reservoir_volume
+```
+
+```{r}
+# Outflow to the next dam
+outflow_next_dam <- ggplot(q_tt,aes(x=(1:nq), qdown)) +
+  geom_line(color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
+outflow_next_dam
+```
+
+```{r}
+# Outflow to the next dam
+excess_flow <- ggplot(q_tt,aes(x=(1:nq), qspill)) +
+  geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
+outflow_next_dam
+```
+
 
 
 
