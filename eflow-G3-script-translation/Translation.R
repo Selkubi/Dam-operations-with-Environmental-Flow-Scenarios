@@ -4,6 +4,9 @@ setwd("C:/Local work folder/Leipzig workshop/from guido")
 library(readr)
 library(dplyr)
 library(lubridate)
+library(ggplot2)
+library(plotly)
+
 
 #### Read input flow record ####
 q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", col_names = c("Date", "Monthly_flow"), col_types = "cd")
@@ -195,14 +198,15 @@ for (i in 1:(nq-1)){
   }
 }
 
+#### Plotting ####
+flow <- ggplot(q_tt,aes(Date, Monthly_flow)) +
+  geom_line()+theme_bw()+ggtitle("Daily Discharge")
+ggplotly(flow)
 
+# Calculated eflow plot
 
-
-
-
-
-
-
+ggplot()+ geom_line(aes(x=(1:nq), y=qef))+
+  theme_bw()+ ggtitle(bquote('Eflow ' ~Q[ef]~'(t)'))
 
 
 
