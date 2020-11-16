@@ -205,9 +205,15 @@ ggplotly(flow)
 
 # Calculated eflow plot
 
-ggplot()+ geom_line(aes(x=(1:nq), y=qef))+
-  theme_bw()+ ggtitle(bquote('Eflow ' ~Q[ef]~'(t)'))
+time_series <- ggplot()+ geom_line(aes(x=(1:nq), y=qef), color="green")+
+  geom_line(aes(x=(1:nq), y=qncons), color="blue")+
+  geom_line(aes(x=(1:nq), y=qcons), color="red")+
+  theme_bw()+ ggtitle(bquote('Eflow ' ~Q[ef]~'(t)')) + xlab("time (days)") + ylab( bquote("Eflow ("~m^3~'/s)'))
+time_series
 
+# Reservoir volume
+reseroir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
+  geom_line()+theme_bw()+ggtitle("Reservoir Volume (t)")
 
 
 
