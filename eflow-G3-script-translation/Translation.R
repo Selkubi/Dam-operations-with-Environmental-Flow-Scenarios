@@ -13,13 +13,13 @@ q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", col_names = c("Date",
 nq <- length(q_tt[["Monthly_flow"]]) #length of the flow record
 nq
 
-i_efty <- 2 #Choose between 1-3 for the type of eflow method
+i_efty <- 3 #Choose between 1-3 for the type of eflow method
 #  Eflow_Type (variable name: i_efty)
 #1: constant whole year
 #2: variable on monthly basis
 #3: proportional to input
 
-i_mvef <- 1 #Choose between 1-5 scenarios
+i_mvef <- 3 #Choose between 1-5 scenarios
 #1: VMF, 2014)
 #2: Tessman, 1980
 #3: Smakhtin et al., 2004
@@ -70,83 +70,85 @@ q90 <- q_tt %>% summarise(ninetth_percentile = quantile(Monthly_flow, 0.10))
 q97 <- q_tt %>% summarise(ninetyseventh_percentile = quantile(Monthly_flow, 0.03))
 
 #### Eflow scenarios ####
-qefm <-vector("numeric", 1)
-LIHflo <- vector("numeric", 1)
+qefm <-vector("numeric", 12)
+LIHflo <- vector("numeric", 12)
 
 if (i_efty==1){ #case 1:constant eflow throughout the whole year
   
-  qefm <- rep(q90, 12)
- 
-   } else if (i_efty==2){ #case 2: variable eflow on a monthly basis
+  qefm <- as.numeric(rep(q90, 12))
   
-      if (i_mvef==1){         # --------------- VMF (2014)
-        for (i in 1:nrow(MMF)) {
-          if (MMF[i, 2] <= 0.4*MAF) {
-            qefm[i] <- (0.6*MAF)
-            LIHflo[i] <- 1    #i denotes a low flow month
-            } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
-              qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the begining, but for now this works ok. 
-              LIHflo[i] <- 2    #i denotes an intermediate flow month
-              } else {
-                qefm[i] <-(0.3*MAF)
-                LIHflo[i] <- 3 #i denotes a high flow month
-              }
-          }
-        } 
-     else if (i_mvef==2){ # --------------- Tessmann (1980)
-       for (i in 1:nrow(MMF)) {
-        if (MMF[i, 2] <= 0.4*MAF) {
-         qefm[i] <- as.numeric(MMF[i, 2]) #sk:see note above
-         LIHflo[i] <- 1 #i denotes a low flow month
-         } else if(MMF[i, 2] > 0.4*MAF && 0.4*MMF[i, 2] <= 0.4*MAF) {
-           qefm[i] <- 0.4*MAF
-           LIHflo[i] <- 2 #i denotes an intermediate flow month
-           } else {
-             qefm[i] <- 0.4*MAF
-             LIHflo[i] <- 3 #i denotes a high flow month
+} else if (i_efty==2){ #case 2: variable eflow on a monthly basis
+  
+  if (i_mvef==1){         # --------------- VMF (2014)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= 0.4*MAF) {
+        qefm[i] <- (0.6*MAF)
+        LIHflo[i] <- 1    #i denotes a low flow month
+      } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
+        qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the begining, but for now this works ok. 
+        LIHflo[i] <- 2    #i denotes an intermediate flow month
+      } else {
+        qefm[i] <-(0.3*MAF)
+        LIHflo[i] <- 3 #i denotes a high flow month
+      }
+    }
+  } 
+  else if (i_mvef==2){ # --------------- Tessmann (1980)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= 0.4*MAF) {
+        qefm[i] <- as.numeric(MMF[i, 2]) #sk:see note above
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else if(MMF[i, 2] > 0.4*MAF && 0.4*MMF[i, 2] <= 0.4*MAF) {
+        qefm[i] <- 0.4*MAF
+        LIHflo[i] <- 2 #i denotes an intermediate flow month
+      } else {
+        qefm[i] <- 0.4*MAF
+        LIHflo[i] <- 3 #i denotes a high flow month
       }
     } 
   } 
-     else if (i_mvef==3) { #--------------- Smakhtin et al. (2004b)
-       for (i in 1:nrow(MMF)) {
-         if (MMF[i, 2] <= MAF) {
-         qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, I just indicated the data to extract, need to test later on
-         LIHflo[i] <- 1 #i denotes a low flow month
-         } else {
-           qefm[i] <- 0.2*MAF # check this rule
-           LIHflo[i] <- 3 #i denotes a high flow month
+  else if (i_mvef==3) { #--------------- Smakhtin et al. (2004b)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= MAF) {
+        qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, I just indicated the data to extract, need to test later on
+        LIHflo[i] <- 1 #i denotes a low flow month
+      } else {
+        qefm[i] <- 0.2*MAF # check this rule
+        LIHflo[i] <- 3 #i denotes a high flow month
       }
     } 
   } 
-     else if (i_mvef==4) { #--------------- Tennant (1976)
-      for (i in 1:nrow(MMF)) {
-       if (MMF[i, 2] <= MAF) {
+  else if (i_mvef==4) { #--------------- Tennant (1976)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= MAF) {
         qefm[i] <- 0.2*MAF
         LIHflo[i] <- 1 #i denotes a low flow month
-        } else {
-         qefm[i] <- 0.4*MAF
-         LIHflo[i] <- 3 #i denotes a high flow month
+      } else {
+        qefm[i] <- 0.4*MAF
+        LIHflo[i] <- 3 #i denotes a high flow month
       }
     } 
   } 
-     else if (i_mvef==5) { #--------------- Q90-Q50 (2014)
-      for (i in 1:nrow(MMF)) {
-       if (MMF[i, 2] <= MAF) {
+  else if (i_mvef==5) { #--------------- Q90-Q50 (2014)
+    for (i in 1:nrow(MMF)) {
+      if (MMF[i, 2] <= MAF) {
         qefm[i] <-q90[[1]]
         LIHflo[i] <- 1 #i denotes a low flow month
-        } else {
-         qefm[i] <- q50[[1]]
-         LIHflo[i] <- 3 #i denotes a high flow month
+      } else {
+        qefm[i] <- q50[[1]]
+        LIHflo[i] <- 3 #i denotes a high flow month
       }
     }
   }
 } else { #case 3
   #---------------- eflow proportional to the incoming flow -----------
-   for (i in 1:nrow(MMF)) {
+  for (i in 1:nrow(MMF)) {
     if (MMF[i,2] < MAF) {
       qefm[i] <- q90[[1]]
-      } else {
-       qefm[i] <- q50[[1]]
+      LIHflo[i] <- 1 #i denotes a low flow month
+    } else {
+      qefm[i] <- q50[[1]]
+      LIHflo[i] <- 3 #i denotes a high flow month
     }
   }
 }
