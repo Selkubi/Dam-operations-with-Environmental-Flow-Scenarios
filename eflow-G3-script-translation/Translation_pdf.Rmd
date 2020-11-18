@@ -20,7 +20,8 @@ First you need to download the whole folder containing the code (.R), the projec
 ### Read input flow record ####
 The data is saved in q_tt and number of days the discharge is recorded is 731
 ```{r}
-q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", col_names = c("Date", "Monthly_flow"), col_types = "cd")
+q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", 
+                   col_names = c("Date", "Monthly_flow"), col_types = "cd")
 nq <- length(q_tt[["Monthly_flow"]]) #length of the flow record
 head(nq)
 ```
@@ -121,7 +122,8 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
             qefm[i] <- (0.6*MAF)
             LIHflo[i] <- 1    #i denotes a low flow month
             } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
-              qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the begining, but for now this works ok. 
+              qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, 
+              #otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the    begining, but for now this works ok. 
               LIHflo[i] <- 2    #i denotes an intermediate flow month
               } else {
                 qefm[i] <-(0.3*MAF)
@@ -146,7 +148,8 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
      else if (i_mvef==3) {                  #--------------- Smakhtin et al. (2004b)
        for (i in 1:nrow(MMF)) {
          if (MMF[i, 2] <= MAF) {
-         qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, I just indicated the data to extract, need to test later on
+         qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, 
+                              # I just indicated the data to extract, need to test later on
          LIHflo[i] <- 1 #i denotes a low flow month
          } else {
            qefm[i] <- 0.2*MAF # check this rule
@@ -200,7 +203,8 @@ for (i in seq_along(ndays)){
 
 qef <- rep(qefy, ny) #GZ: Check for leap years
 #SK: leap years is doable with lubridate package
-#This gives a vector of 730 which makes sense, Guido's give 731, did he manually added the leap year? maybe with q90 at the end?
+#This gives a vector of 730 which makes sense, Guido's give 731, 
+#did he manually added the leap year? maybe with q90 at the end?
 qef <- c(qef[1:32], qef[32], qef[33:730])
 ```
 
@@ -258,28 +262,32 @@ flow
 time_series <- ggplot()+ geom_line(aes(x=(1:nq), y=qef), color="green")+
   geom_line(aes(x=(1:nq), y=qncons), color="blue")+
   geom_line(aes(x=(1:nq), y=qcons), color="red")+
-  theme_bw()+ ggtitle(bquote('Eflow ' ~Q[ef]~'(t)')) + xlab("time (days)") + ylab( bquote("Eflow ("~m^3~'/s)'))
+  theme_bw()+ ggtitle(bquote('Eflow ' ~Q[ef]~'(t)')) + 
+  xlab("time (days)") + ylab( bquote("Eflow ("~m^3~'/s)'))
 time_series
 ```
 
 ```{r}
 # Reservoir volume
 reservoir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
-  geom_line(color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
+  geom_line(color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + 
+  xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
 reservoir_volume
 ```
 
 ```{r}
 # Outflow to the next dam
 outflow_next_dam <- ggplot(q_tt,aes(x=(1:nq), qdown)) +
-  geom_line(color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
+  geom_line(color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + 
+  xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
 outflow_next_dam
 ```
 
 ```{r}
 # Outflow to the next dam
 excess_flow <- ggplot(q_tt,aes(x=(1:nq), qspill)) +
-  geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
+  geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + 
+  xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
 outflow_next_dam
 ```
 
