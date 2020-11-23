@@ -13,7 +13,7 @@ q_tt <- read_delim("Vermigliana_1996_1997.csv", delim=";", col_names = c("Date",
 nq <- length(q_tt[["Monthly_flow"]]) #length of the flow record
 nq
 
-i_efty <- 3 #Choose between 1-3 for the type of eflow method
+i_efty <- 2 #Choose between 1-3 for the type of eflow method
 #  Eflow_Type (variable name: i_efty)
 #1: constant whole year
 #2: variable on monthly basis
@@ -64,7 +64,7 @@ MMF <- MMF_tt %>% group_by(month) %>%           # Mean annual flow vector for th
 
 MAF <- mean(MMF[["month_average"]])             # Mean annual flow
 
-#50, 90 and 97 % quantile calculation (there might be an error here but we kept it as Guido's)
+#50, 90 and 97 % quantile calculation
 q50 <- q_tt %>% summarise(fifty_percentile = quantile(Monthly_flow, 0.50))
 q90 <- q_tt %>% summarise(ninetth_percentile = quantile(Monthly_flow, 0.10))
 q97 <- q_tt %>% summarise(ninetyseventh_percentile = quantile(Monthly_flow, 0.03))
@@ -166,14 +166,13 @@ for (i in seq_along(ndays)){
 
 qef <- rep(qefy, ny) #GZ: Check for leap years
 #SK: leap years is doable with lubridate package
-#This gives a vector of 730 which makes sense, Guido's give 731, did he manually added the leap year? maybe with q90 at the end?
 qef <- c(qef[1:32], qef[32], qef[33:730])
 
 #### Reservoir operation module ####
 
 qhp <- power/damhei/9810           # average discharge (m3/s) for power production
-qcons <- rep(q90[[1,1]], nq)         # consumptive water use time series (m3/s) assumed as MAF
-qncons <- rep (qhp,nq)          # NON-consumptive water use time series (m3/s) based on input dam power
+qcons <- rep(q90[[1,1]][1], nq)         # consumptive water use time series (m3/s) assumed as MAF
+qncons <- rep (qhp[1], nq)          # NON-consumptive water use time series (m3/s) based on input dam power
 qspill <- rep(0,nq)
 qdown <- rep(0,nq)
 qout <- rep(0, nq)
@@ -181,22 +180,25 @@ qnet <- rep(0, nq)
 unmdem <- 0
 unmdays <- 0
 rvol <- rep(0, nq)       # initialization
-rvol[1] <- rvmax/2        # initial reservoir volume 
+rvol[1] <- rvmax[1]/2        # initial reservoir volume 
 dt <- 86400
+num <- vector(mode="numeric", length = 731)
 for (i in 1:(nq-1)){
   qdown[i] <- qspill[i]+icons*qef[i]+(1-icons)*max(qef[i], qncons[i])
   qout[i] <- qdown[i]+icons*qcons[i]
-  qnet[i] <- q_tt[["Monthly_flow"]][[i]]-qout[i]
+  qnet[i] <- q_tt[["Monthly_flow"]][i]-qout[i]
   rvol[i+1] <- rvol[i]+qnet[i]*dt
-  if (rvol[i]>rvmax){
-    qspill[i+1] <- rvol[i]-rvmax
-    rvol[i] <- rvmax
-  } else if (rvol[i]<rvmin){
+  if (rvol[i] >= rvmax[1]){
+    qspill[i+1] <- (rvol[i]-rvmax[1])/dt
+    rvol[i] <- rvmax[1]
+    num[i] <- 1
+  } else if (rvol[i]<rvmin[1]){
     unmdem <- unmdem+qcons[i]+qncons[i] # total unmet demand (consumpt + non consumpt)
     unmdays <- unmdays+1 # n. of days in which demand is unmet 
     qncons[i] <- 0
     qcons[i] <- 0
-    rvol[i] <- rvmin
+    rvol[i] <- rvmin[1]
+    num[i] <- 2
   }
 }
 
@@ -214,30 +216,22 @@ time_series <- ggplot()+ geom_line(aes(x=(1:nq), y=qef), color="green")+
 time_series
 
 # Reservoir volume
-reservoir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
-  geom_line(color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
+reservoir_volume <- ggplot() +
+  geom_line(aes(x=(1:nq), rvol),color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + 
+  xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
 reservoir_volume
 
 # Outflow to the next dam
-outflow_next_dam <- ggplot(q_tt,aes(x=(1:nq), qdown)) +
-  geom_line(color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
+outflow_next_dam <- ggplot() +
+  geom_line(aes(x=(1:nq), qdown),color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + 
+  xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
 outflow_next_dam
 
 # Outflow to the next dam
-excess_flow <- ggplot(q_tt,aes(x=(1:nq), qspill)) +
-  geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
-outflow_next_dam
-
-
-
-
-
-
-
-
-
-
-
+excess_flow <- ggplot() +
+  geom_line(aes(x=(1:nq), qspill),color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + 
+  xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
+excess_flow
 
 
 

@@ -95,7 +95,7 @@ head(MMF_tt)
 head(MMF)
 ```
 
-50%, 90% and 97 % quantile calculation (there might be an error here but we kept it as Guido's)
+50%, 90% and 97 % quantile calculation 
 
 ```{r}
 q50 <- q_tt %>% summarise(fifty_percentile = quantile(Monthly_flow, 0.50))
@@ -124,7 +124,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
         qefm[i] <- (0.6*MAF)
         LIHflo[i] <- 1    #i denotes a low flow month
       } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
-        qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the begining, but for now this works ok. 
+        qefm[i] <- as.numeric(0.45*MMF[i, 2]) 
         LIHflo[i] <- 2    #i denotes an intermediate flow month
       } else {
         qefm[i] <-(0.3*MAF)
@@ -149,7 +149,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
   else if (i_mvef==3) { #--------------- Smakhtin et al. (2004b)
     for (i in 1:nrow(MMF)) {
       if (MMF[i, 2] <= MAF) {
-        qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, I just indicated the data to extract, need to test later on
+        qefm[i] <- q90[[1]] 
         LIHflo[i] <- 1 #i denotes a low flow month
       } else {
         qefm[i] <- 0.2*MAF # check this rule
@@ -206,7 +206,6 @@ for (i in seq_along(ndays)){
 
 qef <- rep(qefy, ny) #GZ: Check for leap years
 #SK: leap years is doable with lubridate package
-#This gives a vector of 730 which makes sense, Guido's give 731, did he manually added the leap year? maybe with q90 at the end?
 qef <- c(qef[1:32], qef[32], qef[33:730])
 ```
 

@@ -96,7 +96,7 @@ head(MMF_tt)
 head(MMF)
 ```
 
-50%, 90% and 97 % quantile calculation (there might be an error here but we kept it as Guido's)
+50%, 90% and 97 % quantile calculation 
 
 ```{r}
 q50 <- q_tt %>% summarise(fifty_percentile = quantile(Monthly_flow, 0.50))
@@ -122,8 +122,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
             qefm[i] <- (0.6*MAF)
             LIHflo[i] <- 1    #i denotes a low flow month
             } else if(MMF[i, 2] > 0.4*MAF && MMF[i, 2] <= 0.8*MAF) {
-              qefm[i] <- as.numeric(0.45*MMF[i, 2]) #SK:I added as.numeric() here, 
-              #otherwise it produces a list of different classes. There might be a more efficient solution like structruing the lists from the    begining, but for now this works ok. 
+              qefm[i] <- as.numeric(0.45*MMF[i, 2]) 
               LIHflo[i] <- 2    #i denotes an intermediate flow month
               } else {
                 qefm[i] <-(0.3*MAF)
@@ -148,7 +147,7 @@ if (i_efty==1){ #case 1:constant eflow throughout the whole year
      else if (i_mvef==3) {                  #--------------- Smakhtin et al. (2004b)
        for (i in 1:nrow(MMF)) {
          if (MMF[i, 2] <= MAF) {
-         qefm[i] <- q90[[1]] #sk:also for quantile data, instead of as.numeric, 
+         qefm[i] <- q90[[1]] 
                               # I just indicated the data to extract, need to test later on
          LIHflo[i] <- 1 #i denotes a low flow month
          } else {
@@ -203,7 +202,6 @@ for (i in seq_along(ndays)){
 
 qef <- rep(qefy, ny) #GZ: Check for leap years
 #SK: leap years is doable with lubridate package
-#This gives a vector of 730 which makes sense, Guido's give 731, 
 #did he manually added the leap year? maybe with q90 at the end?
 qef <- c(qef[1:32], qef[32], qef[33:730])
 ```
@@ -232,20 +230,21 @@ dt <- 86400                          # seconds in a day
 
 The dam operation 
 ```` {r}
+
 for (i in 1:(nq-1)){
   qdown[i] <- qspill[i]+icons*qef[i]+(1-icons)*max(qef[i], qncons[i])
   qout[i] <- qdown[i]+icons*qcons[i]
-  qnet[i] <- q_tt[["Monthly_flow"]][[i]]-qout[i]
+  qnet[i] <- q_tt[["Monthly_flow"]][i]-qout[i]
   rvol[i+1] <- rvol[i]+qnet[i]*dt
-  if (rvol[i]>rvmax){
-    qspill[i+1] <- rvol[i]-rvmax
-    rvol[i] <- rvmax
-  } else if (rvol[i]<rvmin){
-    unmdem <- unmdem+qcons[i]+qncons[i]      # total unmet demand (consumpt + non consumpt)
-    unmdays <- unmdays+1                     # n. of days in which demand is unmet 
+  if (rvol[i] >= rvmax[1]){
+    qspill[i+1] <- (rvol[i]-rvmax[1])/dt
+    rvol[i] <- rvmax[1]
+  } else if (rvol[i]<rvmin[1]){
+    unmdem <- unmdem+qcons[i]+qncons[i] # total unmet demand (consumpt + non consumpt)
+    unmdays <- unmdays+1 # n. of days in which demand is unmet 
     qncons[i] <- 0
     qcons[i] <- 0
-    rvol[i] <- rvmin
+    rvol[i] <- rvmin[1]
   }
 }
 ```
@@ -269,26 +268,26 @@ time_series
 
 ```{r}
 # Reservoir volume
-reservoir_volume <- ggplot(q_tt,aes(x=(1:nq), rvol)) +
-  geom_line(color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + 
+reservoir_volume <- ggplot() +
+  geom_line(aes(x=(1:nq), rvol),color="blue")+theme_bw()+ggtitle("Reservoir Volume (t)") + 
   xlab("time (days)") + ylab( bquote("Res.Vol ("~m^3~')'))
 reservoir_volume
 ```
 
 ```{r}
 # Outflow to the next dam
-outflow_next_dam <- ggplot(q_tt,aes(x=(1:nq), qdown)) +
-  geom_line(color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + 
+outflow_next_dam <- ggplot() +
+  geom_line(aes(x=(1:nq), qdown),color="blue")+theme_bw()+ggtitle('Outflow to the next dam ' ~Q[down]~'(t)') + 
   xlab("time (days)") + ylab( bquote("Outflow ("~m^3~'/s)'))
 outflow_next_dam
 ```
 
 ```{r}
 # Outflow to the next dam
-excess_flow <- ggplot(q_tt,aes(x=(1:nq), qspill)) +
-  geom_line(color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + 
+excess_flow <- ggplot() +
+  geom_line(aes(x=(1:nq), qspill),color="blue")+theme_bw()+ggtitle('Excess flow ' ~Q[spill]~'(t)') + 
   xlab("time (days)") + ylab( bquote("Excess flow ("~m^3~'/s)'))
-outflow_next_dam
+excess_flow
 ```
 
 
