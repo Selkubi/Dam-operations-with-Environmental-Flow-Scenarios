@@ -182,6 +182,7 @@ unmdays <- 0
 rvol <- rep(0, nq)       # initialization
 rvol[1] <- rvmax[1]/2        # initial reservoir volume 
 dt <- 86400
+
 num <- vector(mode="numeric", length = 731)
 for (i in 1:(nq-1)){
   qdown[i] <- qspill[i]+icons*qef[i]+(1-icons)*max(qef[i], qncons[i])
@@ -193,7 +194,7 @@ for (i in 1:(nq-1)){
     rvol[i] <- rvmax[1]
     num[i] <- 1
   } else if (rvol[i]<rvmin[1]){
-    unmdem <- unmdem+qcons[i]+qncons[i] # total unmet demand (consumpt + non consumpt)
+    unmdem <- unmdem+(qcons[i]*icons)+(qncons[i]*(1-icons)) # total unmet demand (consumpt + non consumpt)
     unmdays <- unmdays+1 # n. of days in which demand is unmet 
     qncons[i] <- 0
     qcons[i] <- 0
