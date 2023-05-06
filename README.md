@@ -11,7 +11,7 @@ Any flow data can be used.
 
 For sample usage see the example in the [Documentation](https://github.com/Selkubi/DamOperations_EnvironmentalFlowScenarios/blob/main/eflow-G3-script-translation/Translation_pdf.pdf)
 
-For a detailed visualisation of the selected scenarios see its [Rshiny page] (https://selinkubilay.shinyapps.io/app_Eflow_scenarios/?_ga=2.174104226.1013783756.1683324304-258450006.1683131619)
+For a detailed visualisation of the selected scenarios see its [Rshiny page](https://selinkubilay.shinyapps.io/app_Eflow_scenarios/?_ga=2.174104226.1013783756.1683324304-258450006.1683131619)
 
 
 
